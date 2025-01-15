@@ -1,0 +1,32 @@
+.card {
+  border: 1px solid #c3c3c3;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.card h3,
+.card p {
+  margin: 0;
+}
+
+.card h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.check-id {
+  font-size: 12px;
+}
+
+.status {
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  scale: 0.7;
+}
