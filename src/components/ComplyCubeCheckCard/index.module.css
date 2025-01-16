@@ -19,6 +19,10 @@
   align-items: center;
 }
 
+.error {
+  border: 1px solid red;
+}
+
 .check-id {
   font-size: 12px;
 }
@@ -29,4 +33,11 @@
   right: 24px;
   transform: translateY(-50%);
   scale: 0.7;
+}
+
+.error-msg {
+  text-align: center;
+  color: red;
+  font-size: 24px;
+  margin: 20px 0;
 }

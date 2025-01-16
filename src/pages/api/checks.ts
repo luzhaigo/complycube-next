@@ -22,8 +22,8 @@ async function handler(
 
     return res.status(201).json({ data: check, error: null });
   } else if (req.method === "GET") {
-    const queryClientId = req.query.id as string;
-    const check = await complycube.check.get(queryClientId);
+    const checkId = req.query.id as string;
+    const check = await complycube.check.get(checkId);
 
     return res.status(200).json({ data: check, error: null });
   }
