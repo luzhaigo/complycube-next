@@ -18,13 +18,10 @@ function isSchema(
 }
 
 export function withValidation<
-  T extends ZodSchema,
+  S extends ZodSchema | { [K in HttpVerbs]?: ZodSchema },
   Req extends NextApiRequest = NextApiRequest,
   Res extends NextApiResponse = NextApiResponse
->(
-  schema: T | { [k in HttpVerbs]?: T },
-  handler: (req: Req, res: Res) => unknown | Promise<unknown>
-) {
+>(schema: S, handler: (req: Req, res: Res) => unknown | Promise<unknown>) {
   return async (req: Req, res: Res) => {
     try {
       if (["PUT", "POST", "PATCH"].includes(req.method as HttpVerbs)) {

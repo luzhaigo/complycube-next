@@ -35,7 +35,6 @@ async function handler(
 }
 
 export default withValidation(
-  // @ts-ignore
   { GET: getCheckSchema, POST: createCheckSchema },
   handler
 );
