@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Head from "next/head";
 import GitHubIcon from "@/components/GitHubIcon";
 import PersonalInfoForm from "@/components/forms/PersonalInfoForm";
@@ -28,6 +28,7 @@ const geistMono = Geist_Mono({
 });
 
 export default function Home() {
+  const loadingRef = useRef(false);
   const [client, setClient] = useState<Client>();
   const [token, setToken] = useState<Token>();
   const [documentCapture, setDocumentCapture] =
@@ -55,12 +56,18 @@ export default function Home() {
   const showCheckList = !!checkList.length;
 
   const onSubmit = useCallback(async (info: PersonalInfo) => {
+    if (loadingRef.current) return;
+
     try {
+      loadingRef.current = true;
       const { data } = await API.createComplyCubeClient(info);
       setClient(data.client);
       API.setComplyCubeClientIdHeader(data.client.id);
     } catch (error) {
       console.error("failed to create a complycube client", error);
+    } finally {
+      // We need to add a delay to give ComplyCube enough time to initialize
+      setTimeout(() => (loadingRef.current = false), 2000);
     }
   }, []);
 
