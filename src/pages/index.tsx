@@ -3,11 +3,11 @@ import Head from "next/head";
 import GitHubIcon from "@/components/GitHubIcon";
 import PersonalInfoForm from "@/components/forms/PersonalInfoForm";
 import ComplyCubeCheckCardList from "@/components/ComplyCubeCheckCardList";
+import Loading from "@/components/Loading";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Client } from "@complycube/api";
 import * as API from "@/utils/api";
 import {
-  Token,
   PersonalInfo,
   ComplyCubeCompleteEvent,
   ComplyCubeDocumentCapture,
@@ -29,8 +29,9 @@ const geistMono = Geist_Mono({
 
 export default function Home() {
   const loadingRef = useRef(false);
+  const complycubeRef = useRef<any>(null);
+  const [loading, setLoading] = useState(false);
   const [client, setClient] = useState<Client>();
-  const [token, setToken] = useState<Token>();
   const [documentCapture, setDocumentCapture] =
     useState<ComplyCubeDocumentCapture>();
   const [faceCapture, setFaceCapture] = useState<ComplyCubeFaceCapture>();
@@ -55,71 +56,66 @@ export default function Home() {
 
   const showCheckList = !!checkList.length;
 
+  const createComplyCubeToken = useCallback(async (id: string) => {
+    const { data } = await API.createComplyCubeToken(id);
+    return data.token;
+  }, []);
+
   const onSubmit = useCallback(async (info: PersonalInfo) => {
     if (loadingRef.current) return;
 
     try {
       loadingRef.current = true;
+      setLoading(true);
       const { data } = await API.createComplyCubeClient(info);
       setClient(data.client);
       API.setComplyCubeClientIdHeader(data.client.id);
-    } catch (error) {
-      console.error("failed to create a complycube client", error);
-    } finally {
-      // We need to add a delay to give ComplyCube enough time to initialize
-      setTimeout(() => (loadingRef.current = false), 2000);
-    }
-  }, []);
+      const token = await createComplyCubeToken(data.client.id);
 
-  const createComplyCubeToken = useCallback(async (id: string) => {
-    try {
-      const { data } = await API.createComplyCubeToken(id);
-      setToken(data.token);
-    } catch (error) {
-      console.error("failed to create a token", error);
-    }
-  }, []);
+      loadingRef.current = false;
+      setLoading(false);
 
-  useEffect(() => {
-    if (!client?.id) return;
+      if (!token) return;
 
-    createComplyCubeToken(client.id);
-  }, [client?.id]);
-
-  useEffect(() => {
-    if (!token) return;
-
-    if (!ComplyCube) {
-      return window.alert(
-        "ComplyCube initialization has failed, please refresh the page"
-      );
-    }
-
-    const complycube = ComplyCube.mount({
-      token,
-      stages: ["intro", "documentCapture", "faceCapture", "completion"],
-      onComplete(data: ComplyCubeCompleteEvent) {
-        setDocumentCapture(data.documentCapture);
-        setFaceCapture(data.faceCapture);
-        setTimeout(
-          () => complycube.updateSettings({ isModalOpen: false }),
-          2000
+      if (!ComplyCube) {
+        return window.alert(
+          "ComplyCube initialization has failed, please refresh the page"
         );
-      },
-      onModalClose() {
-        complycube.updateSettings({ isModalOpen: false });
-      },
-      onError({ type, message }: ComplyCubeErrorEvent) {
-        if (type === "token_expired" && client) {
-          createComplyCubeToken(client.id);
-        } else {
-          console.error(message);
-        }
-      },
-    });
+      }
 
-    return () => complycube.unmount();
-  }, [token]);
+      const complycube = ComplyCube.mount({
+        token,
+        stages: ["intro", "documentCapture", "faceCapture", "completion"],
+        onComplete(data: ComplyCubeCompleteEvent) {
+          setDocumentCapture(data.documentCapture);
+          setFaceCapture(data.faceCapture);
+          setTimeout(
+            () => complycube.updateSettings({ isModalOpen: false }),
+            2000
+          );
+        },
+        onModalClose() {
+          complycube.updateSettings({ isModalOpen: false });
+        },
+        onError({ type, message }: ComplyCubeErrorEvent) {
+          if (type === "token_expired" && client) {
+            createComplyCubeToken(client.id);
+          } else {
+            console.error(message);
+          }
+        },
+      });
+
+      complycubeRef.current = complycube;
+    } catch (error) {
+      console.error("failed to initialize an onboarding flow.", error);
+    } finally {
+      loadingRef.current = false;
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => () => complycubeRef.current?.unmount(), []);
 
   return (
     <>
@@ -140,6 +136,11 @@ export default function Home() {
             <GitHubIcon />
           </div>
           <h1 className={styles.title}>Customer Onboarding</h1>
+          {loading && (
+            <div className={styles.loading}>
+              <Loading />
+            </div>
+          )}
           {!showCheckList && <PersonalInfoForm onSubmit={onSubmit} />}
           {showCheckList && <ComplyCubeCheckCardList data={checkList} />}
         </main>
