@@ -1,7 +1,16 @@
 import { Client, Check, Document, LivePhoto } from "@complycube/api";
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ComplyCube: any;
+  const ComplyCube: {
+    mount(arg: object): { updateSettings(arg: object): void };
+  };
+  namespace NodeJS {
+    interface ProcessEnv {
+      COMPLYCUBE_API_KEY: string;
+      COMPLYCUBE_REFERRER: string;
+      COMPLYCUBE_SCRIPT: string;
+      COMPLYCUBE_STYLESHEET: string;
+    }
+  }
 }
 
 export type ResponseData<T> = {
